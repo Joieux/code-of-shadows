@@ -5,7 +5,7 @@
 ## 🎮 Overview  
 **Code of Shadows** is an interactive coding game that teaches Python through a mystery adventure. You play as a rogue investigator uncovering a digital conspiracy—one code puzzle at a time.
 
-Built for adult beginners. No setup. Just open in your browser and start solving.
+Built for adult beginners. No setup. Just open it in your browser and start solving.
 
 ## 🧠 What You'll Learn (by Chapter)
 | Chapter | Focus |
