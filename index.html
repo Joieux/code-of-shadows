@@ -1,0 +1,341 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Code of Shadows</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        h1 { color: #00ffe0; }
+        #dialogue-box, #hints, #output {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #00ffe0;
+            background-color: #1e1e1e;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border: 1px solid #555;
+        }
+        button {
+            padding: 10px;
+            margin: 5px;
+            background-color: #00ffe0;
+            color: #000;
+            border: none;
+            cursor: pointer;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .light-mode {
+            background-color: #f0f0f0;
+            color: #000;
+        }
+        .light-mode #dialogue-box, .light-mode #hints, .light-mode #output {
+            background-color: #ffffff;
+            color: #000;
+            border-color: #00c0c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="changeChapter(-1)">Previous Chapter</button>
+        <button onclick="changeChapter(1)">Next Chapter</button>
+        <button onclick="toggleDarkMode()">Toggle Dark/Light Mode</button>
+        <button onclick="toggleMute()">Toggle Audio</button>
+    </div>
+
+    <h1 id="chapter-title"></h1>
+    <div id="dialogue-box"></div>
+    <div id="hints"></div>
+    <textarea id="code" placeholder="# Write your Python code here..."></textarea><br>
+    <button onclick="runCode()">Run Code</button>
+    <div id="output"></div>
+
+    <audio id="ambient-audio" loop autoplay>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_7b0aa6e295.mp3"></audio>
+    <audio id="error-sound" src="https://cdn.pixabay.com/audio/2022/03/22/audio_2995798e66.mp3"></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@latest/skulpt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@latest/skulpt-stdlib.js"></script>
+    <script>
+        let isMuted = false;
+        let darkMode = true;
+
+        const chapters = [
+
+    {
+        title: "Chapter 1: The Missing Signal",
+        dialogue: "You enter the lab. The lights flicker. A corrupted log file sits on the terminal.",
+        hints: "<ul><li>Define <code>timestamp</code>, <code>location</code>, and <code>last_action</code>.</li><li>Use <code>print()</code> to display them.</li></ul>",
+        check: code => {
+            const correct = code.includes("timestamp") && code.includes("location") && code.includes("last_action") && code.includes("print");
+            if (correct) document.getElementById("success-sound").play();
+            else document.getElementById("error-sound").play();
+            return correct ? "✅ Puzzle Complete: You've reconstructed the log successfully." : "ℹ️ Tip: Use variables and print them out.";
+        }
+    }
+    ,
+    {
+        title: "Chapter 2: Log In to Trouble",
+        dialogue: "The login server shows failed attempts. Can you validate access with conditionals?",
+        hints: "<ul><li>Use <code>if</code>, <code>else</code>, and <code>==</code> to compare strings.</li><li>Authorized: username='DrShadow', password='nexus42'</li></ul>",
+        check: code => {
+            const valid = code.includes("username_input == \"DrShadow\"") && code.includes("password_input == \"nexus42\"") && code.includes("if");
+            if (valid) document.getElementById("success-sound").play();
+            else document.getElementById("error-sound").play();
+            return valid ? "✅ Access granted." : "❌ Access check failed. Review your if statement.";
+        }
+    }
+    ,
+{
+    title: "Chapter 3: Pattern in the Noise",
+    dialogue: "You recover a scrambled transmission. Some fragments may contain hidden keywords. Use a loop to extract them.",
+    hints: "<ul><li>Use a <code>for</code> loop to iterate through a list.</li><li>Print only messages that contain the word <code>'KEY'</code>.</li></ul>",
+    check: code => {
+        const hasLoop = code.includes("for") && code.includes("in");
+        const filtersKey = code.includes("'KEY'") || code.includes('"KEY"');
+        const usesPrint = code.includes("print");
+
+        if (hasLoop && filtersKey && usesPrint) {
+            document.getElementById("success-sound").play();
+            return "✅ Pattern identified. You've isolated the critical transmission lines.";
+        } else {
+            document.getElementById("error-sound").play();
+            return "🔍 Hint: Loop through each message and only print those containing 'KEY'.";
+        }
+    }
+}
+,
+{
+    title: "Chapter 4: The Loopback Trap",
+    dialogue: "You've entered a compromised AI loop chamber. It keeps retrying the same request endlessly. Your task: break the loop when the exit signal is detected.",
+    hints: "<ul><li>Use a <code>while</code> loop to simulate retries.</li><li>Use an <code>if</code> check to <code>break</code> the loop when <code>signal == 'EXIT'</code>.</li></ul>",
+    check: code => {
+        const hasWhile = code.includes("while");
+        const hasBreak = code.includes("break");
+        const checksExit = code.includes("signal == 'EXIT'") || code.includes('signal == "EXIT"');
+
+        if (hasWhile && hasBreak && checksExit) {
+            document.getElementById("success-sound").play();
+            return "✅ Loop broken. You escaped the trap.";
+        } else {
+            document.getElementById("error-sound").play();
+            return "🌀 You're stuck in the loop. Use a condition and break out when 'EXIT' is detected.";
+        }
+    }
+}
+,
+{
+    title: "Chapter 5: Faulty Memory",
+    dialogue: "You’ve uncovered corrupted memory blocks. You must write a function to clean each block by removing the word 'GLITCH'.",
+    hints: "<ul><li>Define a function using <code>def</code>.</li><li>Use <code>.replace()</code> to remove 'GLITCH' from the input.</li><li>Call the function with sample inputs.</li></ul>",
+    check: code => {
+        const hasDef = code.includes("def ");
+        const usesReplace = code.includes(".replace(");
+        const callsFunction = code.includes("(") && code.includes(")");
+
+        if (hasDef && usesReplace && callsFunction) {
+            document.getElementById("success-sound").play();
+            return "✅ Memory block cleaned. System restored.";
+        } else {
+            document.getElementById("error-sound").play();
+            return "⚠️ Your function is missing something. Make sure it defines, replaces 'GLITCH', and is called correctly.";
+        }
+    }
+}
+,
+{
+    title: "Chapter 6: The Vault Accessor",
+    dialogue: "You've discovered a vault protected by a dictionary of access codes. Retrieve the value tied to the correct security key.",
+    hints: "<ul><li>Use a <code>dictionary</code> with string keys and values.</li><li>Use <code>print(vault['key'])</code> to access a value.</li></ul>",
+    check: code => {
+        const hasDict = code.includes("{") && code.includes(":");
+        const accessesKey = code.includes("vault[") || code.includes("vault.get(");
+        const usesPrint = code.includes("print");
+
+        if (hasDict && accessesKey && usesPrint) {
+            document.getElementById("success-sound").play();
+            return "✅ Vault code accessed successfully.";
+        } else {
+            document.getElementById("error-sound").play();
+            return "🔐 Hint: Define a dictionary and retrieve a value using a valid key.";
+        }
+    }
+}
+,
+{
+    title: "Chapter 7: Disrupt the Signal",
+    dialogue: "Your scanner detects fake transmissions in the network. Use boolean logic to filter them out.",
+    hints: "<ul><li>Use <code>if</code> conditions with <code>and</code>, <code>or</code>, <code>not</code>.</li><li>Flag signals that contain <code>'DECOY'</code> but not <code>'KEY'</code>.</li></ul>",
+    check: code => {
+        const hasIf = code.includes("if");
+        const usesAndOrNot = code.includes("and") || code.includes("or") || code.includes("not");
+        const usesPrint = code.includes("print");
+
+        if (hasIf && usesAndOrNot && usesPrint) {
+            document.getElementById("success-sound").play();
+            return "✅ Signal disruption successful. Decoys blocked.";
+        } else {
+            document.getElementById("error-sound").play();
+            return "📡 Use boolean logic to filter fake signals. Try using if + and/or/not.";
+        }
+    }
+}
+,
+{
+    title: "Chapter 8: The Decryptor",
+    dialogue: "You’ve found an encrypted string stream. Your job: decrypt it by converting it to lowercase and removing noise markers.",
+    hints: "<ul><li>Use <code>.lower()</code> to convert strings to lowercase.</li><li>Use <code>.replace()</code> to remove special characters.</li></ul>",
+    check: code => {
+        const usesLower = code.includes(".lower()");
+        const usesReplace = code.includes(".replace(");
+        const usesPrint = code.includes("print");
+
+        if (usesLower && usesReplace && usesPrint) {
+            document.getElementById("success-sound").play();
+            return "✅ Message decrypted. Signal cleaned.";
+        } else {
+            document.getElementById("error-sound").play();
+            return "🔓 Try using .lower() and .replace() to decrypt the string.";
+        }
+    }
+}
+,
+{
+    title: "Chapter 9: The Watchdog Report",
+    dialogue: "The Watchdog AI outputs system logs as strings. Simulate reading them and extract meaningful lines.",
+    hints: "<ul><li>Treat a list of strings as lines in a file.</li><li>Use a <code>for</code> loop to scan and print lines with the word <code>'ERROR'</code>.</li></ul>",
+    check: code => {
+        const usesLoop = code.includes("for") && code.includes("in");
+        const filtersError = code.includes("'ERROR'") || code.includes('"ERROR"');
+        const usesPrint = code.includes("print");
+
+        if (usesLoop && filtersError && usesPrint) {
+            document.getElementById("success-sound").play();
+            return "✅ System logs analyzed. Errors extracted.";
+        } else {
+            document.getElementById("error-sound").play();
+            return "📁 Simulate file parsing. Loop through 'lines' and print those with 'ERROR'.";
+        }
+    }
+}
+,
+{
+    title: "Chapter 10: Exit Node",
+    dialogue: "This is your final escape. You must combine your Python knowledge to generate the final access key.",
+    hints: "<ul><li>Create variables.</li><li>Use a <code>for</code> loop.</li><li>Include <code>if</code> logic and a <code>function</code>.</li></ul>",
+    check: code => {
+        const hasFunction = code.includes("def ");
+        const usesLoop = code.includes("for") || code.includes("while");
+        const usesCondition = code.includes("if");
+        const hasPrint = code.includes("print");
+
+        if (hasFunction && usesLoop && usesCondition && hasPrint) {
+            document.getElementById("success-sound").play();
+            return "✅ Exit key accepted. You’ve escaped the Code of Shadows.";
+        } else {
+            document.getElementById("error-sound").play();
+            return "🚨 Final test requires a mix of skills: function, loop, logic, and output.";
+        }
+    }
+}
+
+];
+            {
+                title: "Chapter 1: The Missing Signal",
+                dialogue: "You enter the lab. The lights flicker. A corrupted log file sits on the terminal.",
+                hints: "<ul><li>Define <code>timestamp</code>, <code>location</code>, and <code>last_action</code>.</li><li>Use <code>print()</code> to display them.</li></ul>",
+                check: code => {
+                    const correct = code.includes("timestamp") && code.includes("location") && code.includes("last_action") && code.includes("print");
+                    if (correct) document.getElementById("success-sound").play();
+                    else document.getElementById("error-sound").play();
+                    return correct
+                        ? "✅ Puzzle Complete: You've reconstructed the log successfully."
+                        : "ℹ️ Tip: Use variables and print them out.";
+                }
+            },
+            {
+                title: "Chapter 2: Log In to Trouble",
+                dialogue: "The login server shows failed attempts. Can you validate access with conditionals?",
+                hints: "<ul><li>Use <code>if</code>, <code>else</code>, and <code>==</code> to compare strings.</li><li>Authorized: username='DrShadow', password='nexus42'</li></ul>",
+                check: code => {
+                    const valid = code.includes("username_input == "DrShadow"") && code.includes("password_input == "nexus42"") && code.includes("if");
+                    if (valid) document.getElementById("success-sound").play();
+                    else document.getElementById("error-sound").play();
+                    return valid
+                        ? "✅ Access granted."
+                        : "❌ Access check failed. Review your if statement.";
+                }
+            }
+        ];
+
+        let currentChapter = parseInt(localStorage.getItem("currentChapter") || "0");
+        loadChapter(currentChapter);
+
+        function loadChapter(index) {
+            const chapter = chapters[index];
+            document.getElementById("chapter-title").innerText = chapter.title;
+            document.getElementById("dialogue-box").innerText = chapter.dialogue;
+            document.getElementById("hints").innerHTML = chapter.hints;
+            document.getElementById("output").innerText = "";
+            document.getElementById("code").value = "";
+            localStorage.setItem("currentChapter", index);
+        }
+
+        function changeChapter(step) {
+            currentChapter = Math.max(0, Math.min(currentChapter + step, chapters.length - 1));
+            loadChapter(currentChapter);
+        }
+
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            document.body.classList.toggle("light-mode", !darkMode);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById("ambient-audio").muted = isMuted;
+            document.getElementById("success-sound").muted = isMuted;
+            document.getElementById("error-sound").muted = isMuted;
+        }
+
+        function runCode() {
+            const code = document.getElementById("code").value;
+            const output = document.getElementById("output");
+            output.innerText = "";
+            Sk.configure({ output: text => output.innerText += text, read: builtinRead });
+            Sk.misceval.asyncToPromise(() => Sk.importMainWithBody("<stdin>", false, code, true))
+                .then(() => {
+                    const result = chapters[currentChapter].check(code);
+                    output.innerText += "\n" + result;
+                })
+                .catch(err => {
+                    document.getElementById("error-sound").play();
+                    output.innerHTML = '<span style="color:red;">' + err.toString() + '</span>';
+                });
+        }
+
+        function builtinRead(x) {
+            if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+                throw "File not found: '" + x + "'";
+            return Sk.builtinFiles["files"][x];
+        }
+    </script>
+</body>
+</html>
